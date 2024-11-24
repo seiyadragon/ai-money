@@ -17,7 +17,9 @@ export default function Header() {
             lg:text-7xl
             relative
             z-10
-            top-56
+            top-32
+            md:top-56
+            lg:top-56
           "
         >
           <h1 className="mx-auto drop-shadow-[0_1.2px_1.2px_rgba(0,0,0,0.8)]">

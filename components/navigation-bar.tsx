@@ -1,6 +1,7 @@
 import Link from "next/link"
 import Image from "next/image"
 import { ThemeSwitcher } from "./theme-switcher"
+import HeaderAuth from "./header-auth"
 
 const NavigationBar = () => {
     return (
@@ -11,7 +12,10 @@ const NavigationBar = () => {
                         <Image src="/images/favicon.ico" alt="logo" width={40} height={40} priority />
                     </Link>
                 </div>
-                <ThemeSwitcher />
+                <div className="flex gap-2">
+                    <ThemeSwitcher />
+                    <HeaderAuth />
+                </div>
             </div>
         </nav>
     )
