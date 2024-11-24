@@ -1,44 +1,38 @@
-import NextLogo from "./next-logo";
-import SupabaseLogo from "./supabase-logo";
+import FallBackImage from "./fallback-image"
 
 export default function Header() {
   return (
-    <div className="flex flex-col gap-16 items-center">
-      <div className="flex gap-8 justify-center items-center">
-        <a
-          href="https://supabase.com/?utm_source=create-next-app&utm_medium=template&utm_term=nextjs"
-          target="_blank"
-          rel="noreferrer"
+    <>
+      <div>
+        <div 
+          className="
+            w-full
+            text-center 
+            font-bold
+            text-3xl
+            text-green-400
+            mx-auto
+            -mt-10
+            md:text-5xl
+            lg:text-7xl
+            relative
+            z-10
+            top-56
+          "
         >
-          <SupabaseLogo />
-        </a>
-        <span className="border-l rotate-45 h-6" />
-        <a href="https://nextjs.org/" target="_blank" rel="noreferrer">
-          <NextLogo />
-        </a>
+          <h1 className="mx-auto drop-shadow-[0_1.2px_1.2px_rgba(0,0,0,0.8)]">
+            TRACK YOUR FINANCES WITH AI
+          </h1>
+        </div>
+        <FallBackImage
+          className="w-full -mt-12 md:-mt-32 lg:-mt-32 z-0"
+          src="https://vvuzagvjpovdibhoxtvm.supabase.co/storage/v1/object/sign/page_gallery/HERO.png?token=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1cmwiOiJwYWdlX2dhbGxlcnkvSEVSTy5wbmciLCJpYXQiOjE3MzI0Mjg5ODYsImV4cCI6MzE3MDYwODkyOTg2fQ.oe-nZ2TzROd_LfraAN-pbRo_dzEkM3f8rY6lSGgexdc&t=2024-11-24T06%3A16%3A26.235Z"
+          alt=""
+          width={1920}
+          height={1080}
+          fallbackSrc="/images/placeholder_image.png"
+        />
       </div>
-      <h1 className="sr-only">Supabase and Next.js Starter Template</h1>
-      <p className="text-3xl lg:text-4xl !leading-tight mx-auto max-w-xl text-center">
-        The fastest way to build apps with{" "}
-        <a
-          href="https://supabase.com/?utm_source=create-next-app&utm_medium=template&utm_term=nextjs"
-          target="_blank"
-          className="font-bold hover:underline"
-          rel="noreferrer"
-        >
-          Supabase
-        </a>{" "}
-        and{" "}
-        <a
-          href="https://nextjs.org/"
-          target="_blank"
-          className="font-bold hover:underline"
-          rel="noreferrer"
-        >
-          Next.js
-        </a>
-      </p>
-      <div className="w-full p-[1px] bg-gradient-to-r from-transparent via-foreground/10 to-transparent my-8" />
-    </div>
+    </>
   );
 }
