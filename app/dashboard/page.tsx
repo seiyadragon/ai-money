@@ -17,7 +17,11 @@ export default async function DashboardPage() {
     return redirect("/sign-in");
   }
 
-  const {data, error} = await supabase.from("UserData").select("*").eq("user_id", user.id);
+  const {data, error} = await supabase.from("UserData")
+                                      .select("*")
+                                      .eq("user_id", user.id)
+                                      .eq("deleted", false);
+
   let loadedUserData = []
 
   if (error) {
@@ -26,9 +30,22 @@ export default async function DashboardPage() {
     loadedUserData = data;
   }
 
+  const {data: deletedData, error: deletedError} = await supabase.from("UserData")
+                                                                  .select("*")
+                                                                  .eq("user_id", user.id)
+                                                                  .eq("deleted", true);
+
+  let deletedUserData = []
+
+  if (deletedError) {
+    console.error(deletedError);
+  } else {
+    deletedUserData = deletedData;
+  }
+
   return (
     <>
-      <FinancialTable entries={loadedUserData}/>
+      <FinancialTable entries={loadedUserData} deletedEntries={deletedUserData}/>
     </>
   );
 }

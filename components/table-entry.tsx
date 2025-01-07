@@ -10,15 +10,21 @@ export type EntryData = {
     date: string,
     description: string,
     amount: number,
+    deleted: boolean,
+}
+
+export type EntryProps = {
+    entry: EntryData,
     checked: boolean,
     checked_action: (id: number, checked: boolean) => void,
 }
 
-const TableEntry = (props: EntryData) => {
+const TableEntry = (props: EntryProps) => {
     const [checked, setChecked] = useState(props.checked);
 
     const onItemCheck = (checkedState: CheckedState) => {
         setChecked(checkedState ? true : false);
+        props.checked_action(props.entry.id, checkedState ? true : false);
     };
 
     useEffect(() => {
@@ -27,26 +33,33 @@ const TableEntry = (props: EntryData) => {
 
     useEffect(() => {
         if (checked) {
-            props.checked_action(props.id, true);
+            props.checked_action(props.entry.id, true);
         } else {
-            props.checked_action(props.id, false);
+            props.checked_action(props.entry.id, false);
         }
     }, [checked]);
 
     return (
-        <tr className={`${props.type == "expense" ? "bg-red-400" : "bg-green-400"}`}>
+        <tr className={`${props.entry.type == "expense" ? "bg-red-400" : "bg-green-400"}`}>
             <td className="py-2 px-4 border-b border-gray-200 w-1/12">
                 <Checkbox onCheckedChange={onItemCheck} checked={checked}/>
             </td>
             <td className="py-2 px-4 border-b border-gray-200 w-1/6">
-                {props.date}
+                {props.entry.date}
             </td>
             <td className="py-2 px-4 border-b border-gray-200">
-                {props.description}
+                {props.entry.description}
             </td>
-            <td className="py-2 px-4 border-b border-gray-200 w-1/6">
-                {props.amount}
-            </td>
+            {props.entry.type == "income" && (
+                <td className="py-2 px-4 border-b border-gray-200 w-1/6">
+                    + ${props.entry.amount}
+                </td>
+            )}
+            {props.entry.type == "expense" && (
+                <td className="py-2 px-4 border-b border-gray-200 w-1/6">
+                    - ${props.entry.amount}
+                </td>
+            )}
         </tr>
     )
 }
