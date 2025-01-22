@@ -40,23 +40,23 @@ const TableEntry = (props: EntryProps) => {
     }, [checked]);
 
     return (
-        <tr className={`${props.entry.type == "expense" ? "bg-red-400" : "bg-green-400"}`}>
-            <td className="py-2 px-4 border-b border-gray-200 w-1/12">
+        <tr>
+            <td className="py-2 px-4 border-b w-1/12">
                 <Checkbox onCheckedChange={onItemCheck} checked={checked}/>
             </td>
-            <td className="py-2 px-4 border-b border-gray-200 w-1/6">
+            <td className="py-2 px-4 border-b w-1/6">
                 {props.entry.date}
             </td>
-            <td className="py-2 px-4 border-b border-gray-200">
+            <td className="py-2 px-4 border-b">
                 {props.entry.description}
             </td>
             {props.entry.type == "income" && (
-                <td className="py-2 px-4 border-b border-gray-200 w-1/6">
+                <td className="py-2 px-4 border-b w-1/6 text-green-500">
                     + ${props.entry.amount}
                 </td>
             )}
             {props.entry.type == "expense" && (
-                <td className="py-2 px-4 border-b border-gray-200 w-1/6">
+                <td className="py-2 px-4 border-b w-1/6 text-red-500">
                     - ${props.entry.amount}
                 </td>
             )}

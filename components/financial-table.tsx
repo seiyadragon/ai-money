@@ -19,19 +19,76 @@ export type DateRange = {
 }
 
 const FinancialTable = (props: TableEntries) => {
+
+    const dtf = (date: Date) => {
+        const yeah = date.toLocaleDateString("en-US", {
+            year: 'numeric',
+            month: '2-digit',
+            day: '2-digit'
+        });
+
+        const [month, day, year] = yeah.split("/");
+
+        return `${year}-${month}-${day}`;
+    }
+
+    const dateBefore = (date1: string, date2: string): boolean => {
+        const [year1, month1, day1] = date1.split("-");
+        const [year2, month2, day2] = date2.split("-");
+
+        if (year1 < year2) {
+            return true;
+        } else if (year1 == year2) {
+            if (month1 < month2) {
+                return true;
+            } else if (month1 == month2) {
+                if (day1 <= day2) {
+                    return true;
+                }
+            }
+        }
+
+        return false;
+    }
+
+    const dateAfter = (date1: string, date2: string): boolean => {
+        const [year1, month1, day1] = date1.split("-");
+        const [year2, month2, day2] = date2.split("-");
+
+        if (year1 > year2) {
+            return true;
+        } else if (year1 == year2) {
+            if (month1 > month2) {
+                return true;
+            } else if (month1 == month2) {
+                if (day1 >= day2) {
+                    return true;
+                }
+            }
+        }
+
+        return false;
+    }
+
+    const dateBetween = (date: string, start: string, end: string): boolean => {
+        return dateAfter(date, start) && dateBefore(date, end);
+    }
+
+    const today = new Date();
+
     const [allChecked, setAllChecked] = useState(false);
     const [checkedEntries, setCheckedEntries] = useState<number[]>([]);
     const [entries, setEntries] = useState(props.entries);
     const [deletedEntries, setDeletedEntries] = useState(props.deletedEntries);
     const [showDeleted, setShowDeleted] = useState(false);
     const [hiddenEntries, setHiddenEntries] = useState<EntryData[]>([]);
-    const [dateRange, setDateRange] = useState<DateRange>({start: "", end: ""});
+    const [dateRange, setDateRange] = useState<DateRange>({start: dtf(today), end: dtf(today)});
     const [textInputValue, setTextInputValue] = useState("");
 
     useEffect(() => {
         setAllChecked(false);
         setCheckedEntries([]);
-        selectDateRange({start: "", end: ""});
+        selectDateRange({start: dtf(today), end: dtf(today)});
     }, [showDeleted]);
 
     useEffect(() => {
@@ -87,6 +144,36 @@ const FinancialTable = (props: TableEntries) => {
     
         setDeletedEntries(updatedDeletedEntries);
         setEntries(updatedEntries);
+        setTotal(calculateTotal());
+    }
+
+    const deleteSelectedPermanently = async () => {
+        const supabase = await createClient();
+    
+        const {
+            data: { user },
+        } = await supabase.auth.getUser();
+    
+        for (let i = 0; i < checkedEntries.length; i++) {
+            await supabase.from("UserData")
+                .delete()
+                .eq("id", checkedEntries[i])
+                .eq("user_id", user?.id);
+        }
+    
+        const updatedDeletedEntries = [...deletedEntries];
+    
+        for (let i = 0; i < checkedEntries.length; i++) {
+            const entryToDelete = updatedDeletedEntries.find((entry) => entry.id === checkedEntries[i]);
+            if (entryToDelete) {
+                const index = updatedDeletedEntries.indexOf(entryToDelete);
+                if (index > -1) {
+                    updatedDeletedEntries.splice(index, 1);
+                }
+            }
+        }
+    
+        setDeletedEntries(updatedDeletedEntries);
         setTotal(calculateTotal());
     }
 
@@ -181,14 +268,30 @@ const FinancialTable = (props: TableEntries) => {
             ]);
         
         const updatedEntries = [...entries];
-        updatedEntries.push({
-            id: updatedEntries.length + 1,
-            type: completionData.type,
-            date: completionData.date,
-            description: completionData.description,
-            amount: completionData.amount,
-            deleted: false
-        });
+        
+        // Add the new entry to the active entries only if it falls within the date range
+        if (dateBetween(completionData.date, dateRange.start, dateRange.end)) {
+            updatedEntries.push({
+                id: updatedEntries.length + 1,
+                type: completionData.type,
+                date: completionData.date,
+                description: completionData.description,
+                amount: completionData.amount,
+                deleted: false
+            });
+        } else {
+            setHiddenEntries([
+                ...hiddenEntries,
+                {
+                    id: updatedEntries.length + 1,
+                    type: completionData.type,
+                    date: completionData.date,
+                    description: completionData.description,
+                    amount: completionData.amount,
+                    deleted: false
+                }
+            ]);
+        }
 
         setEntries(updatedEntries);
         setTotal(calculateTotal());
@@ -248,18 +351,6 @@ const FinancialTable = (props: TableEntries) => {
     };
 
     const selectDateRangeEvent = async (event: React.MouseEvent<HTMLButtonElement>, type: string) => {
-        const dtf = (date: Date) => {
-            const yeah = date.toLocaleDateString("en-US", {
-                year: 'numeric',
-                month: '2-digit',
-                day: '2-digit'
-            });
-
-            const [month, day, year] = yeah.split("/");
-
-            return `${year}-${month}-${day}`;
-        }
-        
         if (type === "today") {
             const today = dtf(new Date());
             selectDateRange({start: today, end: today});
@@ -282,19 +373,19 @@ const FinancialTable = (props: TableEntries) => {
 
     return (
         <div className="md:w-[980px] lg:w-[980px]">
-            <table className="min-w-full w-full bg-white border border-gray-200">
-                <thead className="h-12">
+            <table className="min-w-full w-full border">
+                <thead className="h-16 border-b">
                     <tr>
-                        <th className="py-2 px-4 border-b border-gray-200 bg-gray-100 text-left text-sm font-semibold text-gray-700">
+                        <th className="py-2 px-4 text-left text-sm font-semibold">
                             <Checkbox onCheckedChange={onCheckAll} checked={allChecked}/>
                         </th>
-                        <th className="py-2 px-4 border-b border-gray-200 bg-gray-100 text-left text-sm font-semibold text-gray-700">
+                        <th className="py-2 px-4 text-left text-sm font-semibold">
                             Date
                         </th>
-                        <th className="py-2 px-4 border-b border-gray-200 bg-gray-100 text-left text-sm font-semibold text-gray-700">
+                        <th className="py-2 px-4 text-left text-sm font-semibold">
                             Description
                         </th>
-                        <th className="py-2 px-4 border-b border-gray-200 bg-gray-100 text-left text-sm font-semibold text-gray-700">
+                        <th className="py-2 px-4 text-left text-sm font-semibold">
                             Amount
                         </th>
                     </tr>
@@ -329,9 +420,9 @@ const FinancialTable = (props: TableEntries) => {
                 <div>
                     <div className="flex justify-between mt-4 align-middle">
                         <div className="flex">
-                            <span className="text-sm font-semibold text-gray-700">Start Date: </span>
+                            <span className="text-sm font-semibold">Start Date: </span>
                             <Input type="date" placeholder="Start Date" className="w-1/2" value={dateRange.start} onChange={(event) => selectDateRange({start: event.target.value, end: dateRange.end})}/>
-                            <span className="text-sm font-semibold text-gray-700 ml-4">End Date: </span>
+                            <span className="text-sm font-semibold ml-4">End Date: </span>
                             <Input type="date" placeholder="End Date" className="w-1/2" value={dateRange.end} onChange={(event) => selectDateRange({start: dateRange.start, end: event.target.value})}/>
                         </div>
                         <div className="flex">
@@ -376,7 +467,10 @@ const FinancialTable = (props: TableEntries) => {
             )}  
             {showDeleted && (
                 <div className="flex justify-end mt-4">
-                    <button className="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded" onClick={restoreSelected}>
+                    <button className="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded" onClick={deleteSelectedPermanently}>
+                        Delete Permanently
+                    </button>
+                    <button className="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded ml-4" onClick={restoreSelected}>
                         Restore
                     </button>
                     <button className="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded ml-4" onClick={() => {
