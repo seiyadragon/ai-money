@@ -3,7 +3,6 @@ import { redirect } from "next/navigation";
 import FinancialTable from "@/components/financial-table";
 import Title from "@/components/title";
 import DashboardNavigation from "@/components/dashboard-navigation";
-import { fetchCompletion } from "./actions";
 
 export default async function DashboardExpensesPage() {
   const databaseTable = "ExpenseData";
