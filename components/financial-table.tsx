@@ -6,11 +6,12 @@ import { Checkbox } from "./ui/checkbox"
 import { CheckedState } from "@radix-ui/react-checkbox"
 import { createClient } from "@/utils/supabase/client"
 import { Input } from "./ui/input"
-import { fetchCompletion } from "@/app/dashboard/actions"
+import { fetchExpenseCompletion } from "@/app/dashboard/expenses/actions"
 
 export type TableEntries = {
     entries: EntryData[],
     deletedEntries: EntryData[],
+    databaseTable: string,
 }
 
 export type DateRange = {
@@ -126,7 +127,7 @@ const FinancialTable = (props: TableEntries) => {
         const updatedEntries = [...entries];
     
         for (let i = 0; i < checkedEntries.length; i++) {
-            await supabase.from("UserData")
+            await supabase.from(props.databaseTable)
                 .update({ deleted: true })
                 .eq("id", checkedEntries[i])
                 .eq("user_id", user?.id);
@@ -145,6 +146,8 @@ const FinancialTable = (props: TableEntries) => {
         setDeletedEntries(updatedDeletedEntries);
         setEntries(updatedEntries);
         setTotal(calculateTotal());
+        setAllChecked(false);
+        setCheckedEntries([]);
     }
 
     const deleteSelectedPermanently = async () => {
@@ -155,7 +158,7 @@ const FinancialTable = (props: TableEntries) => {
         } = await supabase.auth.getUser();
     
         for (let i = 0; i < checkedEntries.length; i++) {
-            await supabase.from("UserData")
+            await supabase.from(props.databaseTable)
                 .delete()
                 .eq("id", checkedEntries[i])
                 .eq("user_id", user?.id);
@@ -175,6 +178,8 @@ const FinancialTable = (props: TableEntries) => {
     
         setDeletedEntries(updatedDeletedEntries);
         setTotal(calculateTotal());
+        setAllChecked(false);
+        setCheckedEntries([]);
     }
 
     const restoreSelected = async () => {
@@ -188,7 +193,7 @@ const FinancialTable = (props: TableEntries) => {
         const updatedDeletedEntries = [...deletedEntries];
     
         for (let i = 0; i < checkedEntries.length; i++) {
-            await supabase.from("UserData")
+            await supabase.from(props.databaseTable)
                 .update({ deleted: false })
                 .eq("id", checkedEntries[i])
                 .eq("user_id", user?.id);
@@ -207,6 +212,8 @@ const FinancialTable = (props: TableEntries) => {
         setEntries(updatedEntries);
         setDeletedEntries(updatedDeletedEntries);
         setTotal(calculateTotal());
+        setAllChecked(false);
+        setCheckedEntries([]);
     }
 
     const calculateTotal = () => {
@@ -248,14 +255,14 @@ const FinancialTable = (props: TableEntries) => {
     const submitMessage = async (prompt: string) => {
         const supabase = await createClient();
 
-        const completion = await fetchCompletion(prompt);
+        const completion = await fetchExpenseCompletion(prompt, new Date().toDateString());
         const completionData = JSON.parse(completion);
         
         const {
             data: { user },
         } = await supabase.auth.getUser();
 
-        await supabase.from("UserData")
+        await supabase.from(props.databaseTable)
             .insert([
                 {
                     type: completionData.type,
@@ -268,6 +275,7 @@ const FinancialTable = (props: TableEntries) => {
             ]);
         
         const updatedEntries = [...entries];
+        const updatedHiddenEntries = [...hiddenEntries];
         
         // Add the new entry to the active entries only if it falls within the date range
         if (dateBetween(completionData.date, dateRange.start, dateRange.end)) {
@@ -280,22 +288,24 @@ const FinancialTable = (props: TableEntries) => {
                 deleted: false
             });
         } else {
-            setHiddenEntries([
-                ...hiddenEntries,
-                {
-                    id: updatedEntries.length + 1,
-                    type: completionData.type,
-                    date: completionData.date,
-                    description: completionData.description,
-                    amount: completionData.amount,
-                    deleted: false
-                }
-            ]);
+            updatedHiddenEntries.push({
+                id: updatedEntries.length + 1,
+                type: completionData.type,
+                date: completionData.date,
+                description: completionData.description,
+                amount: completionData.amount,
+                deleted: false
+            });
         }
 
         setEntries(updatedEntries);
+        setHiddenEntries(updatedHiddenEntries);
+        
         setTotal(calculateTotal());
         setTextInputValue("");
+
+        setAllChecked(false);
+        setCheckedEntries([]);
     }
 
     const submitMessageKeyEvent = async (event: React.KeyboardEvent<HTMLInputElement>) => {
@@ -348,6 +358,9 @@ const FinancialTable = (props: TableEntries) => {
     
         setHiddenEntries(entriesToHide);
         setEntries(entriesToShow);
+
+        setAllChecked(false);
+        setCheckedEntries([]);
     };
 
     const selectDateRangeEvent = async (event: React.MouseEvent<HTMLButtonElement>, type: string) => {

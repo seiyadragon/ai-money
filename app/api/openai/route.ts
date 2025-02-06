@@ -15,8 +15,7 @@ export const POST = async (req: NextRequest) => {
         apiKey: openai_key,
     });
 
-    const { prompt } = await req.json();
-    const today = new Date().toDateString();
+    const { prompt, role } = await req.json();
 
     try {
         const completion = await openai.chat.completions.create({
@@ -24,21 +23,7 @@ export const POST = async (req: NextRequest) => {
             messages: [
                 { 
                     role: "system", 
-                    content: `
-                        Return a JSON formatted as such: 
-                        {
-                            type: "expense/income", 
-                            date: "yyyy-mm-dd", 
-                            description: "", 
-                            amount: ""
-                        } 
-                        by using the information provided by the user.
-                        Make sure the descriptions is as brief as possible.
-                        Don't include words like "please" or "thank you".
-                        Or words like "spent" or "earned".
-                        Keep in mind today is ${today} and any unclear dates should use today's date.
-                        And nay dates such as "yesterday" should use today's date as a reference point.
-                    `
+                    content: role,
                 },
                 {
                     role: "user",
